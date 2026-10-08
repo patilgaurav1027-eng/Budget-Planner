@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CampusLedger — Student Money Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .glass { background: rgba(255,255,255,.92); backdrop-filter: blur(12px); }
+    .nav-active { background:#111827; color:white; }
+    .progress { transition: width .35s ease; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:10px; }
+  
+  html.dark body{background:#0b1120;color:#e5e7eb}
+  html.dark .bg-white{background-color:#111827!important}
+  html.dark .bg-slate-50{background-color:#0f172a!important}
+  html.dark .bg-\[\#f6f8fc\]{background-color:#0b1120!important}
+  html.dark .border-slate-200{border-color:#273449!important}
+  html.dark .border-slate-100{border-color:#1e293b!important}
+  html.dark .text-slate-900{color:#f8fafc!important}
+  html.dark .text-slate-700{color:#cbd5e1!important}
+  html.dark .text-slate-600{color:#94a3b8!important}
+  html.dark .text-slate-500{color:#94a3b8!important}
+  html.dark .text-slate-400{color:#64748b!important}
+  html.dark .bg-slate-100{background-color:#1e293b!important}
+  html.dark .bg-slate-900{background-color:#f8fafc!important;color:#0f172a!important}
+  html.dark .hover\:bg-slate-50:hover{background-color:#172033!important}
+  html.dark .soft-card{box-shadow:0 12px 35px rgba(0,0,0,.22)}
+  html.dark .category-tile{border-color:#293548}
+  html.dark .category-tile:hover{box-shadow:0 12px 30px rgba(0,0,0,.25)}
+  html.dark .bg-indigo-50{background-color:#1e1b4b!important}
+  html.dark .text-indigo-900{color:#c7d2fe!important}
+  html.dark .text-indigo-700{color:#a5b4fc!important}
+  html.dark .bg-emerald-50{background-color:#052e25!important}
+  html.dark .text-emerald-700{color:#6ee7b7!important}
+  html.dark .bg-amber-50{background-color:#3b2606!important}
+  html.dark .text-amber-700{color:#fcd34d!important}
+  html.dark .bg-rose-50{background-color:#3b0a1b!important}
+  html.dark .text-rose-700{color:#fda4af!important}
+  html.dark .bg-orange-50{background-color:#3b1d08!important}
+  html.dark .text-orange-900,.dark .text-orange-700\/70{color:#fed7aa!important}
+  html.dark .bg-sky-50{background-color:#082f49!important}
+  html.dark .text-sky-900,.dark .text-sky-700\/70{color:#bae6fd!important}
+  html.dark .bg-violet-50{background-color:#2e1065!important}
+  html.dark .text-violet-900,.dark .text-violet-700\/70{color:#ddd6fe!important}
+  html.dark .bg-pink-50{background-color:#500724!important}
+  html.dark .text-pink-900,.dark .text-pink-700\/70{color:#fbcfe8!important}
+  html.dark .bg-indigo-600{background-color:#6366f1!important}
+  html.dark .bg-emerald-600{background-color:#10b981!important}
+  html.dark .bg-rose-600{background-color:#f43f5e!important}
+  html.dark .bg-amber-500{background-color:#f59e0b!important}
+  html.dark input,html.dark select,html.dark textarea{background:#0f172a!important;color:#e5e7eb!important;border-color:#334155!important}
+  html.dark .peer:checked + div{background-color:#172554}
+  .theme-toggle{width:42px;height:42px;border:1px solid #e2e8f0;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#fff;transition:.2s}
+  .theme-toggle:hover{transform:translateY(-1px);box-shadow:0 5px 15px rgba(15,23,42,.08)}
+  html.dark .theme-toggle{background:#111827;border-color:#334155}
+  .theme-icon{font-size:18px;line-height:1}
+  .color-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+
+</style>
+</head>
+<body class="bg-[#f6f8fc] text-slate-900">
+<style>
+  .soft-card{box-shadow:0 8px 30px rgba(15,23,42,.06);transition:transform .2s ease,box-shadow .2s ease}
+  .soft-card:hover{transform:translateY(-2px);box-shadow:0 14px 35px rgba(15,23,42,.09)}
+  .stat-card{position:relative;overflow:hidden}
+  .stat-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+  .category-tile{transition:transform .18s ease,box-shadow .18s ease;border:1px solid #e2e8f0}
+  .category-tile:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(15,23,42,.08)}
+  .accent-purple{--accent:#7c3aed}.accent-emerald{--accent:#059669}.accent-rose{--accent:#e11d48}.accent-amber{--accent:#d97706}
+  .accent-blue{--accent:#2563eb}
+  .section-label{letter-spacing:.08em;text-transform:uppercase;font-size:11px;font-weight:800}
+  .nav-dot{width:8px;height:8px;border-radius:999px;display:inline-block}
+</style>
+  <div class="min-h-screen">
+    <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-lg font-black text-white shadow-lg shadow-indigo-200">₹</div>
+          <div>
+            <h1 class="text-lg font-extrabold tracking-tight">CampusLedger</h1>
+            <p class="hidden text-xs text-slate-500 sm:block">A smarter money tracker for students</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="themeToggle" onclick="toggleTheme()" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark/light mode"><span class="theme-icon">🌙</span></button>
+          <button onclick="loadDemoData()" class="hidden rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50">Demo</button>
+          <button onclick="exportCSV()" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50">Export CSV</button>
+          <button onclick="openTransactionModal()" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-indigo-200 hover:bg-indigo-700">+ Add</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <section class="mb-7">
+        <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p class="mb-2 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-extrabold text-indigo-700"><span class="nav-dot bg-indigo-500"></span> Student finance dashboard</p>
+            <h2 class="text-3xl font-black tracking-tight sm:text-4xl">Know where your money goes.</h2>
+            <p class="mt-2 max-w-2xl text-slate-500">Track every rupee, mark whether it was actually necessary, and spot habits before they become expensive.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-slate-500">Month</label>
+            <input id="monthPicker" type="month" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400" />
+          </div>
+        </div>
+      </section>
+
+      <div class="mb-5 flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-500">
+        <span class="inline-flex items-center gap-2"><i class="color-dot bg-indigo-500"></i>Balance</span>
+        <span class="inline-flex items-center gap-2"><i class="color-dot bg-emerald-500"></i>Income</span>
+        <span class="inline-flex items-center gap-2"><i class="color-dot bg-rose-500"></i>Expenses</span>
+        <span class="inline-flex items-center gap-2"><i class="color-dot bg-amber-500"></i>Budget</span>
+      </div>
+
+      <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="soft-card stat-card accent-purple rounded-2xl border border-slate-200 bg-white p-5">
+          <div class="flex items-center justify-between"><span class="text-sm font-semibold text-slate-500">Available balance</span><span class="rounded-lg bg-indigo-50 px-2 py-1 text-base">💳</span><span class="rounded-lg bg-slate-100 px-2 py-1 text-xs">LIVE</span></div>
+          <div id="balance" class="mt-3 text-3xl font-black">₹0</div>
+          <p id="balanceSub" class="mt-1 text-xs text-slate-500">Income minus expenses</p>
+        </div>
+        <div class="soft-card stat-card accent-emerald rounded-2xl border border-slate-200 bg-white p-5">
+          <span class="text-sm font-semibold text-slate-500">Total income</span><span class="float-right rounded-lg bg-emerald-50 px-2 py-1 text-base">↗️</span>
+          <div id="income" class="mt-3 text-3xl font-black text-emerald-600">₹0</div>
+          <p class="mt-1 text-xs text-slate-500">Scholarship, pocket money, salary, etc.</p>
+        </div>
+        <div class="soft-card stat-card accent-rose rounded-2xl border border-slate-200 bg-white p-5">
+          <span class="text-sm font-semibold text-slate-500">Total spent</span><span class="float-right rounded-lg bg-rose-50 px-2 py-1 text-base">💸</span>
+          <div id="expense" class="mt-3 text-3xl font-black text-rose-600">₹0</div>
+          <p id="expenseSub" class="mt-1 text-xs text-slate-500">This month</p>
+        </div>
+        <div class="soft-card stat-card accent-amber rounded-2xl border border-slate-200 bg-white p-5">
+          <span class="text-sm font-semibold text-slate-500">Needs score</span><span class="float-right rounded-lg bg-amber-50 px-2 py-1 text-base">🎯</span>
+          <div id="needScore" class="mt-3 text-3xl font-black">0%</div>
+          <p class="mt-1 text-xs text-slate-500">Share of spending marked important</p>
+        </div>
+      </section>
+
+      <section class="mt-6 grid gap-6 lg:grid-cols-3">
+        <div class="soft-card rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-2">
+          <div class="flex items-center justify-between">
+            <div><h3 class="font-extrabold">📊 Spending overview</h3><p class="text-xs text-slate-500">Your spending by category</p></div>
+            <span id="topCategory" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">No data</span>
+          </div>
+          <div class="mt-5 h-64"><canvas id="categoryChart"></canvas></div>
+        </div>
+        <div class="soft-card rounded-2xl border border-slate-200 bg-white p-5">
+          <h3 class="font-extrabold">💚 Money health</h3>
+          <p class="mt-1 text-xs text-slate-500">A simple student-friendly snapshot.</p>
+          <div class="mt-5 space-y-5">
+            <div><div class="mb-2 flex justify-between text-sm"><span>Needs</span><b id="needsPct">0%</b></div><div class="h-2 overflow-hidden rounded-full bg-slate-100"><div id="needsBar" class="progress h-full rounded-full bg-emerald-500" style="width:0%"></div></div></div>
+            <div><div class="mb-2 flex justify-between text-sm"><span>Wants</span><b id="wantsPct">0%</b></div><div class="h-2 overflow-hidden rounded-full bg-slate-100"><div id="wantsBar" class="progress h-full rounded-full bg-amber-500" style="width:0%"></div></div></div>
+            <div><div class="mb-2 flex justify-between text-sm"><span>Savings rate</span><b id="savingPct">0%</b></div><div class="h-2 overflow-hidden rounded-full bg-slate-100"><div id="savingBar" class="progress h-full rounded-full bg-indigo-500" style="width:0%"></div></div></div>
+          </div>
+          <div id="insight" class="mt-6 rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-900">Add a few transactions to get a personalized insight.</div>
+        </div>
+      </section>
+
+      <section class="mt-6 grid gap-6 lg:grid-cols-3">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5">
+          <div class="flex items-center justify-between"><div><h3 class="font-extrabold">🎯 Monthly budget</h3><p class="text-xs text-slate-500">Set a spending limit</p></div><button onclick="setBudget()" class="text-xs font-bold text-indigo-600">Edit</button></div>
+          <div class="mt-4 flex items-end justify-between"><span id="budgetSpent" class="text-2xl font-black">₹0</span><span id="budgetLimit" class="text-sm text-slate-500">of ₹10,000</span></div>
+          <div class="mt-3 h-3 overflow-hidden rounded-full bg-slate-100"><div id="budgetBar" class="progress h-full rounded-full bg-slate-900" style="width:0%"></div></div>
+          <p id="budgetMsg" class="mt-2 text-xs text-slate-500">Set a realistic monthly limit for yourself.</p>
+        </div>
+        <div class="soft-card rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-2">
+          <h3 class="font-extrabold">Quick student categories</h3>
+          <p class="mt-1 text-xs text-slate-500">Designed around common college expenses.</p>
+          <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <button onclick="quickAdd('Food')" class="category-tile rounded-xl bg-orange-50 p-3 text-left"><span class="text-xl">🍱</span><b class="mt-2 block text-orange-900">Food</b><span class="mt-1 block text-xs text-orange-700/70">Mess, snacks, cafés</span></button>
+            <button onclick="quickAdd('Travel')" class="category-tile rounded-xl bg-sky-50 p-3 text-left"><span class="text-xl">🚌</span><b class="mt-2 block text-sky-900">Travel</b><span class="mt-1 block text-xs text-sky-700/70">Bus, metro, fuel</span></button>
+            <button onclick="quickAdd('Education')" class="category-tile rounded-xl bg-violet-50 p-3 text-left"><span class="text-xl">📚</span><b class="mt-2 block text-violet-900">Education</b><span class="mt-1 block text-xs text-violet-700/70">Books, fees, projects</span></button>
+            <button onclick="quickAdd('Entertainment')" class="category-tile rounded-xl bg-pink-50 p-3 text-left"><span class="text-xl">🎮</span><b class="mt-2 block text-pink-900">Fun</b><span class="mt-1 block text-xs text-pink-700/70">Movies, games, outings</span></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="soft-card mt-6 rounded-2xl border border-slate-200 bg-white">
+        <div class="flex flex-col gap-3 border-b border-slate-200 p-5 md:flex-row md:items-center md:justify-between">
+          <div><h3 class="font-extrabold">🧾 Transactions</h3><p id="transactionCount" class="text-xs text-slate-500">0 transactions</p></div>
+          <div class="flex flex-wrap gap-2">
+            <select id="typeFilter" class="rounded-lg border border-slate-200 px-3 py-2 text-sm"><option value="all">All types</option><option value="expense">Expenses</option><option value="income">Income</option></select>
+            <select id="categoryFilter" class="rounded-lg border border-slate-200 px-3 py-2 text-sm"><option value="all">All categories</option></select>
+            <select id="importanceFilter" class="rounded-lg border border-slate-200 px-3 py-2 text-sm"><option value="all">Important + optional</option><option value="important">Important only</option><option value="optional">Optional only</option></select>
+          </div>
+        </div>
+        <div id="transactionList" class="divide-y divide-slate-100"></div>
+        <div id="emptyState" class="hidden p-10 text-center"><div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-xl">₹</div><h4 class="mt-3 font-bold">No transactions yet</h4><p class="mt-1 text-sm text-slate-500">Start with today's first expense or income.</p><button onclick="openTransactionModal()" class="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Add transaction</button></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/50 p-4">
+    <div class="max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl bg-white shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-200 p-5"><div><h3 id="modalTitle" class="text-lg font-extrabold">Add transaction</h3><p class="text-xs text-slate-500">Record it now. Future-you will thank you.</p></div><button onclick="closeModal()" class="rounded-lg p-2 hover:bg-slate-100">✕</button></div>
+      <form id="transactionForm" class="space-y-4 p-5">
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block text-sm font-semibold">Type<select id="fType" class="mt-1 w-full rounded-lg border border-slate-200 p-3"><option value="expense">Expense</option><option value="income">Income</option></select></label>
+          <label class="block text-sm font-semibold">Amount (₹)<input id="fAmount" type="number" min="1" step="0.01" required class="mt-1 w-full rounded-lg border border-slate-200 p-3" placeholder="250" /></label>
+        </div>
+        <label class="block text-sm font-semibold">What did you spend/receive it for?<input id="fTitle" required class="mt-1 w-full rounded-lg border border-slate-200 p-3" placeholder="College canteen lunch" /></label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block text-sm font-semibold">Category<select id="fCategory" class="mt-1 w-full rounded-lg border border-slate-200 p-3"></select></label>
+          <label class="block text-sm font-semibold">Date<input id="fDate" type="date" required class="mt-1 w-full rounded-lg border border-slate-200 p-3" /></label>
+        </div>
+        <div id="importanceWrap" class="rounded-xl border border-slate-200 p-4">
+          <p class="text-sm font-bold">Was this expense important?</p>
+          <p class="mt-1 text-xs text-slate-500">Be honest — this helps the app show where you can cut costs.</p>
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <label class="cursor-pointer"><input type="radio" name="important" value="true" checked class="peer sr-only"><div class="rounded-lg border border-slate-200 p-3 text-center peer-checked:border-emerald-500 peer-checked:bg-emerald-50"><b>Yes, needed</b><span class="block text-xs text-slate-500">Food, travel, study...</span></div></label>
+            <label class="cursor-pointer"><input type="radio" name="important" value="false" class="peer sr-only"><div class="rounded-lg border border-slate-200 p-3 text-center peer-checked:border-amber-500 peer-checked:bg-amber-50"><b>Not necessary</b><span class="block text-xs text-slate-500">Fun, impulse, extras...</span></div></label>
+          </div>
+        </div>
+        <label class="block text-sm font-semibold">Notes <span class="font-normal text-slate-400">(optional)</span><textarea id="fNotes" rows="2" class="mt-1 w-full rounded-lg border border-slate-200 p-3" placeholder="Any detail you want to remember"></textarea></label>
+        <button id="saveBtn" class="w-full rounded-lg bg-slate-900 py-3 font-bold text-white hover:bg-slate-800">Save transaction</button>
+      </form>
+    </div>
+  </div>
+
+<script>
+const categories = ['Food','Travel','Education','Rent/Hostel','Bills','Shopping','Health','Entertainment','Subscriptions','Personal','College','Family','Other'];
+const defaultData = [
+  {id:1,type:'income',amount:6000,title:'Monthly pocket money',category:'Family',date:'2026-10-01',important:true,notes:''},
+  {id:2,type:'expense',amount:1800,title:'Hostel / rent contribution',category:'Rent/Hostel',date:'2026-10-02',important:true,notes:''},
+  {id:3,type:'expense',amount:120,title:'College canteen',category:'Food',date:'2026-10-05',important:true,notes:'Lunch'},
+  {id:4,type:'expense',amount:250,title:'Movie with friends',category:'Entertainment',date:'2026-10-06',important:false,notes:''}
+];
+let savedData = localStorage.getItem('campusLedgerData');
+let data = [];
+try { data = savedData ? JSON.parse(savedData) : []; } catch(e) { data = []; }
+let budget = Number(localStorage.getItem('campusLedgerBudget') || 10000);
+let editingId = null;
+let chart;
+
+const $ = id => document.getElementById(id);
+function money(n){ return '₹' + Number(n).toLocaleString('en-IN',{maximumFractionDigits:2}); }
+function selectedMonth(){ return $('monthPicker').value; }
+function monthData(){ return data.filter(x => x.date.startsWith(selectedMonth())); }
+
+function init(){
+  const now = new Date();
+  $('monthPicker').value = now.toISOString().slice(0,7);
+  $('fDate').value = now.toISOString().slice(0,10);
+  $('fCategory').innerHTML = categories.map(c=>`<option>${c}</option>`).join('');
+  $('categoryFilter').innerHTML = '<option value="all">All categories</option>' + categories.map(c=>`<option>${c}</option>`).join('');
+  ['monthPicker','typeFilter','categoryFilter','importanceFilter'].forEach(id=>$(id).addEventListener('change',render));
+  $('fType').addEventListener('change',()=> $('importanceWrap').classList.toggle('hidden',$('fType').value==='income'));
+  $('transactionForm').addEventListener('submit',saveTransaction);
+  render();
+}
+function openTransactionModal(category){
+  editingId = null;
+  $('modalTitle').textContent = 'Add transaction';
+  $('saveBtn').textContent = 'Save transaction';
+  $('modal').classList.remove('hidden');
+  $('modal').classList.add('flex');
+  $('fType').value = 'expense';
+  $('importanceWrap').classList.remove('hidden');
+  $('fAmount').value = '';
+  $('fTitle').value = '';
+  $('fNotes').value = '';
+  $('fDate').value = new Date().toISOString().slice(0,10);
+  $('fCategory').value = category || 'Food';
+  document.querySelector('input[name="important"][value="true"]').checked = true;
+  setTimeout(() => $('fAmount').focus(), 50);
+}
+
+function editTransaction(id){
+  const x = data.find(t => t.id === id);
+  if(!x) return;
+  editingId = id;
+  $('modalTitle').textContent = 'Edit transaction';
+  $('saveBtn').textContent = 'Update transaction';
+  $('fType').value = x.type;
+  $('fAmount').value = x.amount;
+  $('fTitle').value = x.title;
+  $('fCategory').value = x.category;
+  $('fDate').value = x.date;
+  $('fNotes').value = x.notes || '';
+  $('importanceWrap').classList.toggle('hidden', x.type === 'income');
+  const radio = document.querySelector(`input[name="important"][value="${x.important ? 'true' : 'false'}"]`);
+  if(radio) radio.checked = true;
+  $('modal').classList.remove('hidden');
+  $('modal').classList.add('flex');
+  setTimeout(() => $('fAmount').focus(), 50);
+}
+function quickAdd(category){ openTransactionModal(category); }
+function closeModal(){
+  $('modal').classList.add('hidden');
+  $('modal').classList.remove('flex');
+  $('transactionForm').reset();
+  editingId = null;
+  $('modalTitle').textContent='Add transaction';
+  $('saveBtn').textContent='Save transaction';
+  $('fType').value='expense';
+  $('fDate').value=new Date().toISOString().slice(0,10);
+  $('fCategory').value='Food';
+  $('importanceWrap').classList.remove('hidden');
+}
+function saveTransaction(e){
+  e.preventDefault();
+  const type=$('fType').value, amount=Number($('fAmount').value);
+  const updated = {
+    id: editingId || Date.now(),
+    type,
+    amount,
+    title: $('fTitle').value.trim(),
+    category: $('fCategory').value,
+    date: $('fDate').value,
+    important: type==='income' ? true : document.querySelector('input[name=important]:checked').value==='true',
+    notes: $('fNotes').value.trim()
+  };
+
+  if(editingId){
+    const index = data.findIndex(x => x.id === editingId);
+    if(index !== -1) data[index] = updated;
+  } else {
+    data.unshift(updated);
+  }
+
+  localStorage.setItem('campusLedgerData',JSON.stringify(data));
+  closeModal();
+  render();
+}
+function removeTransaction(id){
+  const item = data.find(x => x.id === id);
+  if(confirm(`Delete "${item ? item.title : 'this transaction'}"?`)){
+    data=data.filter(x=>x.id!==id);
+    localStorage.setItem('campusLedgerData',JSON.stringify(data));
+    render();
+  }
+}
+function setBudget(){
+  const v=prompt('Monthly spending budget in ₹',budget);
+  if(v!==null && Number(v)>0){budget=Number(v);localStorage.setItem('campusLedgerBudget',budget);render();}
+}
+function filtered(){
+  const m=monthData(), tf=$('typeFilter').value, cf=$('categoryFilter').value, im=$('importanceFilter').value;
+  return m.filter(x=>(tf==='all'||x.type===tf)&&(cf==='all'||x.category===cf)&&(im==='all'||(im==='important'?x.important:!x.important)));
+}
+function render(){
+  const m=monthData(), expenses=m.filter(x=>x.type==='expense'), incomes=m.filter(x=>x.type==='income');
+  const inc=incomes.reduce((a,x)=>a+x.amount,0), exp=expenses.reduce((a,x)=>a+x.amount,0), bal=inc-exp;
+  $('income').textContent=money(inc); $('expense').textContent=money(exp); $('balance').textContent=money(bal);
+  $('expenseSub').textContent=selectedMonth() ? new Date(selectedMonth()+'-02').toLocaleString('en-IN',{month:'long',year:'numeric'}) : 'This month';
+  const needed=expenses.filter(x=>x.important).reduce((a,x)=>a+x.amount,0), wants=exp-needed;
+  const needPct=exp?Math.round(needed/exp*100):0, wantPct=exp?Math.round(wants/exp*100):0, savePct=inc?Math.max(0,Math.min(100,Math.round((bal/inc)*100))):0;
+  $('needScore').textContent=needPct+'%'; $('needsPct').textContent=needPct+'%'; $('wantsPct').textContent=wantPct+'%'; $('savingPct').textContent=savePct+'%';
+  $('needsBar').style.width=needPct+'%'; $('wantsBar').style.width=wantPct+'%'; $('savingBar').style.width=savePct+'%';
+  const byCat={}; expenses.forEach(x=>byCat[x.category]=(byCat[x.category]||0)+x.amount);
+  const top=Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0]; $('topCategory').textContent=top?`${top[0]} · ${money(top[1])}`:'No data';
+  const spent=Math.min(100,(exp/budget)*100); $('budgetSpent').textContent=money(exp); $('budgetLimit').textContent='of '+money(budget); $('budgetBar').style.width=Math.min(100,spent)+'%';
+  $('budgetBar').className='progress h-full rounded-full '+(spent>=100?'bg-rose-500':spent>=80?'bg-amber-500':'bg-slate-900');
+  $('budgetMsg').textContent=exp>budget?`You're ${money(exp-budget)} over budget.`:`${money(Math.max(0,budget-exp))} left in your monthly budget.`;
+  let insight='Add more transactions to get better insights.';
+  if(exp && needPct<50) insight='More than half of your spending is marked optional. Before buying, try the 24-hour rule for non-essential purchases.';
+  else if(exp && wantPct>0) insight=`You spent ${money(wants)} on optional items. That is a good number to watch if you're trying to save more.`;
+  else if(bal>0 && inc) insight=`Nice — you're keeping ${savePct}% of this month's income after recorded expenses.`;
+  else if(bal<0) insight='Your recorded expenses are higher than your income this month. Check your biggest categories and optional spending.';
+  $('insight').textContent=insight;
+  renderChart(byCat); renderTransactions(filtered());
+}
+function renderChart(byCat){
+  const labels=Object.keys(byCat), values=Object.values(byCat);
+  if(chart) chart.destroy();
+  chart=new Chart($('categoryChart'),{type:'doughnut',data:{labels, datasets:[{data:values,borderWidth:2,borderColor:'#fff',backgroundColor:['#6366f1','#10b981','#f59e0b','#f43f5e','#0ea5e9','#8b5cf6','#14b8a6','#ec4899','#64748b','#f97316','#84cc16','#06b6d4','#a855f7']}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:12,usePointStyle:true}}},cutout:'68%'}});
+}
+function renderTransactions(list){
+  $('transactionCount').textContent=`${list.length} transaction${list.length===1?'':'s'}`;
+  $('emptyState').classList.toggle('hidden',list.length!==0);
+  $('transactionList').innerHTML=list.map(x=>{
+    const icon=x.type==='income'?'↗':(x.important?'✓':'!');
+    const iconBg=x.type==='income'?'bg-emerald-50 text-emerald-700':(x.important?'bg-slate-100 text-slate-700':'bg-amber-50 text-amber-700');
+    return `<div class="flex items-center gap-3 p-4 hover:bg-slate-50">
+      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconBg} font-black">${icon}</div>
+      <div class="min-w-0 flex-1"><div class="flex items-center gap-2"><p class="truncate font-bold">${escapeHtml(x.title)}</p>${x.type==='expense'?`<span class="hidden rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold sm:inline">${x.important?'NEEDED':'OPTIONAL'}</span>`:'<span class="hidden rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 sm:inline">INCOME</span>'}</div><p class="text-xs text-slate-500">${x.category} · ${new Date(x.date+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}${x.notes?' · '+escapeHtml(x.notes):''}</p></div>
+      <div class="text-right">
+        <p class="font-extrabold ${x.type==='income'?'text-emerald-600':'text-slate-900'}">${x.type==='income'?'+':'−'}${money(x.amount)}</p>
+        <div class="mt-1 flex justify-end gap-2">
+          <button onclick="editTransaction(${x.id})" class="text-[11px] font-semibold text-indigo-500 hover:text-indigo-700">Edit</button>
+          <button onclick="removeTransaction(${x.id})" class="text-[11px] font-semibold text-slate-400 hover:text-rose-600">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+
+function loadDemoData(){
+  if(data.length && !confirm('Replace your current transactions with demo data?')) return;
+  data = [...defaultData];
+  localStorage.setItem('campusLedgerData', JSON.stringify(data));
+  render();
+}
+
+function exportCSV(){
+  const rows=[['Date','Type','Title','Category','Amount','Important','Notes'],...data.map(x=>[x.date,x.type,x.title,x.category,x.amount,x.important?'Yes':'No',x.notes])];
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='campusledger-transactions.csv'; a.click();
+}
+
+function applyTheme(){
+  const dark = localStorage.getItem('campusLedgerTheme') === 'dark';
+  document.documentElement.classList.toggle('dark', dark);
+  const btn = $('themeToggle');
+  if(btn){
+    btn.querySelector('.theme-icon').textContent = dark ? '☀️' : '🌙';
+    btn.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+  }
+}
+function toggleTheme(){
+  const isDark = document.documentElement.classList.contains('dark');
+  localStorage.setItem('campusLedgerTheme', isDark ? 'light' : 'dark');
+  applyTheme();
+  render();
+}
+applyTheme();
+
+init();
+</script>
+</body>
+</html>
